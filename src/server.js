@@ -22,10 +22,18 @@ const sockets = [];
 
 wss.on("connection", (socket) => {
   sockets.push(socket);
+  socket["name"] = "anonymous";
   console.log("Connected to Browser");
   socket.on("close", () => console.log("DisConnected from Browser"));
   socket.on("message", (message) => {
-    sockets.forEach((aSocket) => aSocket.send(message.toString("utf-8")));
+    const parsed = JSON.parse(message);
+    if (parsed.type === "new_message") {
+      sockets.forEach((aSocket) =>
+        aSocket.send(`${socket.name}: ${parsed.payload}`)
+      );
+    } else if (parsed.type === "name") {
+      socket["name"] = parsed.payload;
+    }
   });
 });
 
