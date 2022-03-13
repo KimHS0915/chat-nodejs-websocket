@@ -84,6 +84,13 @@ const handleMuteClick = () => {
 
 const handleCameraChange = async () => {
   await getMedia(cameraSelect.value);
+  if (myPeerConnection) {
+    const videoTrack = myStream.getVideoTracks()[0];
+    const videoSender = myPeerConnection
+      .getSenders()
+      .find((sender) => sender.track.kind === "video");
+      videoSender.replaceTrack(videoTrack);
+  }
 };
 
 muteBtn.addEventListener("click", handleMuteClick);
@@ -139,7 +146,19 @@ socket.on("ice", (ice) => {
 // RTC
 
 const makeConnection = () => {
-  myPeerConnection = new RTCPeerConnection();
+  myPeerConnection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: [
+          "stun:stun.1.google.com:19302",
+          "stun:stun1.1.google.com:19302",
+          "stun:stun2.1.google.com:19302",
+          "stun:stun3.1.google.com:19302",
+          "stun:stun4.1.google.com:19302",
+        ],
+      },
+    ],
+  });
   myPeerConnection.addEventListener("icecandidate", handleIce);
   myPeerConnection.addEventListener("addstream", handleAddStream);
   myStream.getTracks().forEach((track) => myPeerConnection.addTrack(track, myStream));
