@@ -1,13 +1,13 @@
 const socket = io();
 
 const myFace = document.getElementById("myFace");
+const peerFace = document.getElementById("peerFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraSelect = document.getElementById("cameras");
 const chat = document.getElementById("chat");
 
 const call = document.getElementById("call");
-
 call.hidden = true;
 
 let myStream;
@@ -122,9 +122,9 @@ const handleWelcomeSubmit = async (e) => {
   const roomNameInput = welcomeForm.querySelector("#roomNameInput");
   const userNameInput = welcomeForm.querySelector("#userNameInput");
   await initCall();
-  socket.emit("join_room", roomNameInput.value);
   roomName = roomNameInput.value;
   userName = userNameInput.value;
+  socket.emit("join_room", roomName, userName);
   roomNameInput.value = "";
   userNameInput.value = "";
   addtitle();
@@ -155,7 +155,8 @@ input.addEventListener("keydown", (e) => {
 
 // Socket 
 
-socket.on("welcome", async () => {
+socket.on("welcome", async (name) => {
+  addMessage(`User ${name} has joined the room`)
   myDataChannel = myPeerConnection.createDataChannel("chat");
   myDataChannel.addEventListener("message", (e) => {
     addMessage(e.data);
@@ -186,6 +187,12 @@ socket.on("ice", (ice) => {
   myPeerConnection.addIceCandidate(ice);
 });
 
+socket.on("bye", (name) => {
+  addMessage(`User ${name} has left the room`);
+  peerFace.srcObject.getTracks().forEach((track) => track.stop());
+  peerFace.srcObject = null;
+});
+
 // RTC
 
 const makeConnection = () => {
@@ -212,6 +219,5 @@ const handleIce = (data) => {
 };
 
 const handleAddStream = (data) => {
-  const peerFace = document.getElementById("peerFace");
   peerFace.srcObject = data.stream;
 };
